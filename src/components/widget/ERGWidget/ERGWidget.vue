@@ -1,21 +1,43 @@
 <template>
-    <VueResizable :width="370" :minWidth="250" :maxWidth="3000" :height="600" :minHeight="240" :maxHeight="3000"
-      :left="windowLeft" :top="120" dragSelector=".drag" class="widget" :disableAttributes="[]">
+    <VueResizable
+      :width="370"
+      :minWidth="250"
+      :maxWidth="3000"
+      :height="600"
+      :minHeight="240"
+      :maxHeight="3000"
+      :left="windowLeft"
+      :top="120"
+      dragSelector=".drag"
+      class="widget resizable-widget"
+    >
       <Title @close="close" class="drag h-8" :title="'Guía de respuesta ante emergencias'"></Title>
       <section class="widget__content">
-  
-        <!-- Ubicación del derrame -->
         <div class="form-group grid grid-cols-3 gap-2">
           <div class="col-span-2">
             <h4 class="text-sm font-semibold mb-2">Ubicación del derrame (DD)</h4>
-            <Input :label="'Latitud'" :type="'number'" :inputValue="inputData.latitude" class="mt-0"
-              @change="(payment) => handleChange(payment, 'latitude')" />
-            <Input :label="'Longitud'" :type="'number'" :inputValue="inputData.longitude" class="mt-0"
-              @change="(payment) => handleChange(payment, 'longitude')" />
+            <Input
+              :label="'Latitud'"
+              :type="'number'"
+              :inputValue="inputData.latitude"
+              class="mt-0"
+              @change="(payment) => handleChange(payment, 'latitude')"
+            />
+            <Input
+              :label="'Longitud'"
+              :type="'number'"
+              :inputValue="inputData.longitude"
+              class="mt-0"
+              @change="(payment) => handleChange(payment, 'longitude')"
+            />
           </div>
           <div class="col-span-1 w-auto flex justify-center items-center">
-            <Button class="bg-gray-500 hover:bg-blue-300 h-[50px] w-[50px] shadow-md"
-              @click="enableCreateLocation()" :icon="'icon_buffer'" :title="'Crear ubicación del Incidente'" />
+            <Button
+              class="bg-gray-500 hover:bg-blue-300 h-[50px] w-[50px] shadow-md"
+              @click="enableCreateLocation()"
+              :icon="'icon_buffer'"
+              :title="'Crear ubicación del Incidente'"
+            />
           </div>
         </div>
   
@@ -32,45 +54,93 @@
           @search-change="onInput"
           @select="onSelect"
           class="custom-multiselect"
+          ref="multiselect"
+          :key="refreshKey"
         />
   
-        <!-- Magnitud del derrame -->
-        <h4 class="text-sm font-semibold mb-2">Magnitud del derrame</h4>
-        <Select :label="'Magnitud del derrame'" :options="['Pequeña', 'Grande']" :inputValue="inputData.spillSize"
-          class="mt-0" @change="(payment) => handleChangeSelect(payment, 'spillSize')"></Select>
-  
-        <!-- Mostrar zona de aislamiento de incendios -->
-        <h4 class="text-sm font-semibold mb-2">Mostrar zona de aislamiento de incendios</h4>
-        <ToggleButton v-model="inputData.fireRisk" />
-  
-        <div class="row">
-  <!-- Dirección del viento -->
-  <div class="col">
-    <Input :label="'Dirección del viento (hacia dónde sopla)'" :type="'number'"
-      :inputValue="inputData.windDirection" class="mt-3"
-      @change="(payment) => handleChange(payment, 'windDirection')" />
+        <div v-if="showBleveModal" class="modal">
+    <div class="modal-content">
+      <p class="modal-title">
+        Para el material que ha seleccionado, es posible mostrar una distancia de evacuación adicional en caso de alto riesgo.
+      </p>
+      <p class="modal-subtitle">
+        Para permitirlo, active el selector <b>Mostrar zona de aislamiento de alto riesgo</b> y seleccione la capacidad correcta del contenedor.
+      </p>
+      <button @click="closeBleveModal" class="modal-button">Aceptar</button>
+    </div>
   </div>
-
-  <!-- Periodo del derrame -->
-  <div class="col">
-    <h4 class="text-sm font-semibold mb-2">Periodo del derrame</h4>
-    <Select :label="'Periodo del derrame'" :options="['Día', 'Noche']" :inputValue="inputData.timeOfDay"
-      class="mt-0" @change="(payment) => handleChangeSelect(payment, 'timeOfDay')"></Select>
-  </div>
-</div>
+        <div v-if="showBleveFields">
+          <h4 class="text-sm font-semibold mb-2">Velocidad del viento</h4>
+          <Select
+            :label="'Velocidad del viento'"
+            :options="['Bajo', 'Moderado', 'Alto']"
+            v-model="windSpeed.speed"
+            class="mt-0"
+          ></Select>
   
-        <!-- Botones de Crear y Limpiar -->
-        <div class="col-span-1 w-auto flex justify-center items-center">
-          <Button class="bg-gray-500 hover:bg-blue-300 h-[50px] w-[50px] shadow-md mr-5"
-            @click="_CreateERGButtonClicked()" :icon="'icon_buffer'" :title="'Crear zonas'" />
-          <Button class="bg-gray-500 hover:bg-blue-300 h-[50px] w-[50px] shadow-md" @click="resetTool()"
-            :icon="'icon_reload'" :title="'Limpiar'" />
+          <h4 class="text-sm font-semibold mb-2">Contenedor de transporte</h4>
+          <Select
+            :label="'Contenedor de transporte'"
+            :options="['Vagón cisterna', 'Camión o remolque cisterna']"
+            v-model="transportContainer.container"
+            class="mt-0"
+          ></Select>
         </div>
   
+        <div class="content-below">
+          <h4 class="text-sm font-semibold mb-2">Magnitud del derrame</h4>
+          <Select
+            :label="'Magnitud del derrame'"
+            :options="['Pequeña', 'Grande']"
+            :inputValue="inputData.spillSize"
+            class="mt-0"
+            @change="(payment) => handleChangeSelect(payment, 'spillSize')"
+          ></Select>
+  
+          <h4 class="text-sm font-semibold mb-2">Mostrar zona de aislamiento de incendios</h4>
+          <ToggleButton v-model="inputData.fireRisk" />
+  
+          <div class="row">
+            <div class="col">
+              <Input
+                :label="'Dirección del viento (hacia dónde sopla)'"
+                :type="'number'"
+                :inputValue="inputData.windDirection"
+                class="mt-3"
+                @change="(payment) => handleChange(payment, 'windDirection')"
+              />
+            </div>
+  
+            <div class="col">
+              <h4 class="text-sm font-semibold mb-2">Periodo del derrame</h4>
+              <Select
+                :label="'Periodo del derrame'"
+                :options="['Día', 'Noche']"
+                :inputValue="inputData.timeOfDay"
+                class="mt-0"
+                @change="(payment) => handleChangeSelect(payment, 'timeOfDay')"
+              ></Select>
+            </div>
+          </div>
+  
+          <div class="col-span-1 w-auto flex justify-center items-center">
+            <Button
+              class="bg-gray-500 hover:bg-blue-300 h-[50px] w-[50px] shadow-md mr-5"
+              @click="_CreateERGButtonClicked()"
+              :icon="'icon_buffer'"
+              :title="'Crear zonas'"
+            />
+            <Button
+              class="bg-gray-500 hover:bg-blue-300 h-[50px] w-[50px] shadow-md"
+              @click="resetTool()"
+              :icon="'icon_reload'"
+              :title="'Limpiar'"
+            />
+          </div>
+        </div>
       </section>
     </VueResizable>
   </template>
-  
 
 <!--Vue 3 Composition API -->
 <script setup>
@@ -114,6 +184,8 @@ const props = defineProps({
     activeView: Object,
     swichView: Boolean,
 });
+
+
 const activeView = toRefs(props).activeView.value;
 watch(
     () => __props.swichView,
@@ -169,12 +241,32 @@ const onInput = (value) => {
         material.label.toLowerCase().includes(value.toLowerCase())
     );
 };
-
+const refreshKey = ref(0);
 const onSelect = (selected) => {
-    console.log('Material seleccionado:', selected.label);
-    inputData.material = selected.label;
+  console.log('Material seleccionado:', selected.label);
+  inputData.material = selected.label;
+  // Forzar una actualización
+  refreshKey.value++;
+
+  // Verificar si el material tiene BLEVE
+  const material = materialOptions.value.find((m) => m.label.includes(selected.label));
+  const materialCatalog = materials.find((m) => m.IDNum === material.value);
+  if (materialCatalog && materialCatalog.BLEVE === 'Yes') {
+    console.log('El material seleccionado tiene BLEVE');
+    console.log(materialCatalog);
+    showBleveModal.value = true;
+    showBleveFields.value = false; // Ocultar los campos adicionales inicialmente
+  } else {
+    console.log(materialCatalog);
+    showBleveModal.value = false;
+    showBleveFields.value = false;
+  }
 };
 
+const closeBleveModal = () => {
+  showBleveModal.value = false;
+  showBleveFields.value = true; // Mostrar los campos adicionales después de cerrar el modal
+};
 
 const loadMaterials = () => {
     try {
@@ -330,7 +422,6 @@ const _selectedMaterial = ref({}); // Material seleccionado
 const spillSize = ref({});
 const spillTime = ref({});
 const useBleve = reactive({});
-const windSpeed = ref({});
 
 // Definición del objeto transportContainer
 const transportContainer = {
@@ -447,6 +538,14 @@ const initializeDefaultsValues = () => {
         size: "SM",       // posibles valores: "SM", "LG" (Pequeña o Grande)
         disabled: false   // estado inicial
     };
+
+    // Valores por defecto para los nuevos campos
+    windSpeed.speed = "Bajo"; // Opción por defecto para la velocidad del viento
+
+    // Opciones y valor por defecto para el contenedor de transporte
+    transportContainer.options = ['Vagón cisterna', 'Camión o remolque cisterna'];
+    transportContainer.container = 'Vagón cisterna'; // Opción por defecto
+
 
     //Se obtiene de la seleccion del usuario
     spillTime.value = {
@@ -569,6 +668,12 @@ const initializeDefaultsValues = () => {
 
 }
 
+const showBleveModal = ref(false);
+const showBleveFields = ref(false);
+const windSpeed = reactive({
+  speed: "Bajo"
+});
+
 const autocompleteConfig = () => {
 
     // const selectedIndex = $(this.materialType).getSelectedItemIndex();
@@ -675,4 +780,93 @@ const _CreateERGButtonClicked = () => {
     background-color: gray;
     border-radius: 8px;
 }
+
+.resizable-widget {
+  height: 650px !important;
+  min-width: 400px !important;
+}
+
+.resizable-widget .vue-resizable__handle--top,
+.resizable-widget .vue-resizable__handle--bottom,
+.resizable-widget .vue-resizable__handle--top-left,
+.resizable-widget .vue-resizable__handle--top-right,
+.resizable-widget .vue-resizable__handle--bottom-left,
+.resizable-widget .vue-resizable__handle--bottom-right {
+    display: none;
+}
+.custom-multiselect::v-deep .multiselect__content-wrapper {
+    padding-left: 10px;
+    padding-right: 10px;
+  background-color: white;
+  position: absolute;
+  z-index: 50;
+  width: 100%;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  max-height: 200px; /* Ajusta este valor según tus necesidades */
+  max-width: 350px;
+  overflow-y: auto; /* Agrega scroll vertical cuando sea necesario */
+}
+
+.modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 100;
+  width: auto;
+  max-width: 400px;
+  height: auto;
+  max-height: 80vh;
+  border-radius: 5px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-content {
+  background-color: #f5f5f5; /* Fondo gris claro */
+  padding: 25px 25px 15px 25px;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  color: #333; /* Texto más oscuro */
+  font-family: Arial, sans-serif;
+}
+
+.modal-title {
+  margin-bottom: 15px;
+  font-size: 16px;
+  color: #333; /* Texto más oscuro */
+  line-height: 1.4;
+}
+
+.modal-subtitle {
+  margin-bottom: 20px;
+  font-size: 14px;
+  color: #333; /* Texto más oscuro */
+  line-height: 1.4;
+}
+
+.modal-button {
+  background-color: #e0e0e0; /* Gris claro */
+  border: none;
+  padding: 8px 16px;
+  border-radius: 5px;
+  font-size: 14px;
+  cursor: pointer;
+  align-self: flex-end; /* Alinea el botón a la derecha */
+  margin-bottom: 10px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2); /* Sombra sutil */
+}
+
+.modal-button:hover {
+  background-color: #d0d0d0; /* Gris un poco más oscuro al hacer hover */
+}
+
+
+.resizable-widget {
+  /* height: 650px !important;  <-  elimina esta linea */
+  min-width: 400px !important;
+}
+
 </style>
