@@ -1,146 +1,136 @@
 <template>
-    <VueResizable
-      :width="370"
-      :minWidth="250"
-      :maxWidth="3000"
-      :height="600"
-      :minHeight="240"
-      :maxHeight="3000"
-      :left="windowLeft"
-      :top="120"
-      dragSelector=".drag"
-      class="widget resizable-widget"
-    >
-      <Title @close="close" class="drag h-8" :title="'Guía de respuesta ante emergencias'"></Title>
-      <section class="widget__content">
-        <div class="form-group grid grid-cols-3 gap-2">
-          <div class="col-span-2">
-            <h4 class="text-sm font-semibold mb-2">Ubicación del derrame (DD)</h4>
-            <Input
-              :label="'Latitud'"
-              :type="'number'"
-              :inputValue="inputData.latitude"
-              class="mt-0"
-              @change="(payment) => handleChange(payment, 'latitude')"
-            />
-            <Input
-              :label="'Longitud'"
-              :type="'number'"
-              :inputValue="inputData.longitude"
-              class="mt-0"
-              @change="(payment) => handleChange(payment, 'longitude')"
-            />
-          </div>
-          <div class="col-span-1 w-auto flex justify-center items-center">
-            <Button
-              class="bg-gray-500 hover:bg-blue-300 h-[50px] w-[50px] shadow-md"
-              @click="enableCreateLocation()"
-              :icon="'icon_buffer'"
-              :title="'Crear ubicación del Incidente'"
-            />
-          </div>
-        </div>
-  
-        <h4 class="text-sm font-semibold mb-2">Material</h4>
-        <multiselect
-          v-model="selectedMaterial"
-          :options="filteredMaterials"
-          :searchable="true"
-          :clear-on-select="false"
-          :close-on-select="true"
-          placeholder="Buscar material..."
-          label="label"
-          track-by="value"
-          @search-change="onInput"
-          @select="onSelect"
-          class="custom-multiselect"
-          ref="multiselect"
-          :key="refreshKey"
-        />
-  
-        <div v-if="showBleveModal" class="modal">
-    <div class="modal-content">
-      <p class="modal-title">
-        Para el material que ha seleccionado, es posible mostrar una distancia de evacuación adicional en caso de alto riesgo.
-      </p>
-      <p class="modal-subtitle">
-        Para permitirlo, active el selector <b>Mostrar zona de aislamiento de alto riesgo</b> y seleccione la capacidad correcta del contenedor.
-      </p>
-      <button @click="closeBleveModal" class="modal-button">Aceptar</button>
-    </div>
-  </div>
-        <div v-if="showBleveFields">
-          <h4 class="text-sm font-semibold mb-2">Velocidad del viento</h4>
-          <Select
-            :label="'Velocidad del viento'"
-            :options="['Bajo', 'Moderado', 'Alto']"
-            v-model="windSpeed.speed"
-            class="mt-0"
-          ></Select>
-  
-          <h4 class="text-sm font-semibold mb-2">Contenedor de transporte</h4>
-          <Select
-            :label="'Contenedor de transporte'"
-            :options="['Vagón cisterna', 'Camión o remolque cisterna']"
-            v-model="transportContainer.container"
-            class="mt-0"
-          ></Select>
-        </div>
-  
-        <div class="content-below">
-          <h4 class="text-sm font-semibold mb-2">Magnitud del derrame</h4>
-          <Select
-            :label="'Magnitud del derrame'"
-            :options="['Pequeña', 'Grande']"
-            :inputValue="inputData.spillSize"
-            class="mt-0"
-            @change="(payment) => handleChangeSelect(payment, 'spillSize')"
-          ></Select>
-  
-          <h4 class="text-sm font-semibold mb-2">Mostrar zona de aislamiento de incendios</h4>
-          <ToggleButton v-model="inputData.fireRisk" />
-  
-          <div class="row">
-            <div class="col">
-              <Input
-                :label="'Dirección del viento (hacia dónde sopla)'"
-                :type="'number'"
-                :inputValue="inputData.windDirection"
-                class="mt-3"
-                @change="(payment) => handleChange(payment, 'windDirection')"
-              />
+    <VueResizable :width="370" :minWidth="250" :maxWidth="3000"
+        :height="showBleveFields || showTable32Fields ? 620 : 550" :minHeight="240" :maxHeight="3000" :left="windowLeft"
+        :top="120" dragSelector=".drag" class="widget resizable-widget">
+        <Title @close="close" class="drag h-8" :title="'Guía de respuesta ante emergencias'"></Title>
+        <section class="widget__content">
+            <div class="form-group grid grid-cols-3 gap-2">
+                <div class="col-span-2">
+                    <h4 class="text-sm font-semibold mb-2">Ubicación del derrame (DD)</h4>
+                    <Input :label="'Latitud'" :type="'number'" :inputValue="inputData.latitude" class="mt-0"
+                        @change="(payment) => handleChange(payment, 'latitude')" />
+                    <Input :label="'Longitud'" :type="'number'" :inputValue="inputData.longitude" class="mt-0"
+                        @change="(payment) => handleChange(payment, 'longitude')" />
+                </div>
+                <div class="col-span-1 w-auto flex justify-center items-center">
+                    <Button class="bg-gray-500 hover:bg-blue-300 h-[50px] w-[50px] shadow-md"
+                        @click="enableCreateLocation()" :icon="'icon_buffer'"
+                        :title="'Crear ubicación del Incidente'" />
+                </div>
             </div>
-  
-            <div class="col">
-              <h4 class="text-sm font-semibold mb-2">Periodo del derrame</h4>
-              <Select
-                :label="'Periodo del derrame'"
-                :options="['Día', 'Noche']"
-                :inputValue="inputData.timeOfDay"
-                class="mt-0"
-                @change="(payment) => handleChangeSelect(payment, 'timeOfDay')"
-              ></Select>
+
+            <h4 class="text-sm font-semibold mb-2">Material</h4>
+            <multiselect v-model="selectedMaterial" :options="filteredMaterials" :searchable="true"
+                :clear-on-select="false" :close-on-select="true" placeholder="Buscar material..." label="label"
+                track-by="value" @search-change="onInput" @select="onSelect"
+                class="custom-multiselect  h-15 border rounded-md px-2 py-1" ref="multiselect" :key="refreshKey" />
+
+            <!-- <div v-if="showBleveModal" class="modal"> -->
+            <div v-if="showTable32Modal" class="modal">
+                <div class="modal-content">
+                    <p class="modal-title">
+                        Para el material que ha seleccionado, es posible mostrar una distancia de evacuación adicional
+                        en caso de alto riesgo.
+                    </p>
+                    <p class="modal-subtitle">
+                        Para permitirlo, active el selector <b>Mostrar zona de aislamiento de alto riesgo</b> y
+                        seleccione la capacidad correcta del contenedor.
+                    </p>
+                    <button @click="closeTable32Modal" class="modal-button">Aceptar</button>
+                </div>
             </div>
-          </div>
-  
-          <div class="col-span-1 w-auto flex justify-center items-center">
-            <Button
-              class="bg-gray-500 hover:bg-blue-300 h-[50px] w-[50px] shadow-md mr-5"
-              @click="_CreateERGButtonClicked()"
-              :icon="'icon_buffer'"
-              :title="'Crear zonas'"
-            />
-            <Button
-              class="bg-gray-500 hover:bg-blue-300 h-[50px] w-[50px] shadow-md"
-              @click="resetTool()"
-              :icon="'icon_reload'"
-              :title="'Limpiar'"
-            />
-          </div>
-        </div>
-      </section>
+
+            <!-- <div v-if="showBleveModal" class="modal"> -->
+            <div v-if="showBleveModal" class="modal">
+                <div class="modal-content">
+                    <p class="modal-title">
+                        Para el material que ha seleccionado, es posible mostrar una distancia de evacuación adicional
+                        en caso de alto riesgo.
+                    </p>
+                    <p class="modal-subtitle">
+                        Para permitirlo, active el selector <b>Mostrar zona de aislamiento de alto riesgo</b> y
+                        seleccione la capacidad correcta del contenedor.
+                    </p>
+                    <button @click="closeBleveModal" class="modal-button">Aceptar</button>
+                </div>
+            </div>
+
+
+            <div class="content-below mt-2">
+                <div class="flex space-x-4">
+                    <div class="flex flex-col w-1/2">
+                        <span
+                            class="text-sm font-semibold text-ellipsis whitespace-nowrap overflow-hidden ">Magnitud del derrame</span>
+                        <Select :label="'Magnitud del derrame'" :options="['Pequeña', 'Grande']"
+                            :inputValue="inputData.spillSize" class="mt-2"
+                            @change="(payment) => handleChangeSelect(payment, 'spillSize')"></Select>
+                    </div>
+
+                    <div class="flex flex-col w-1/2"> <span
+                            class="text-sm font-semibold text-ellipsis whitespace-nowrap overflow-hidden">Mostrar zona
+                            de aislamiento de incendios</span>
+                        <ToggleButton class="mt-4" v-model="inputData.fireRisk" />
+                    </div>
+                </div>
+
+                <div class="flex space-x-4">
+                    <div class="flex flex-col w-1/2"> <span
+                            class="text-sm font-semibold text-ellipsis whitespace-nowrap overflow-hidden">
+                            Dirección del viento (hacia dónde sopla)
+                        </span>
+                        <Input :type="'number'" :inputValue="inputData.windDirection" class="mt-2"
+                            @change="(payment) => handleChange(payment, 'windDirection')" />
+                    </div>
+
+                    <div class="flex flex-col w-1/2"> <span
+                            class="text-sm font-semibold text-ellipsis whitespace-nowrap overflow-hidden mb-2">Periodo
+                            del derrame</span>
+                        <Select :label="'Periodo del derrame'" :options="['Día', 'Noche']"
+                            :inputValue="inputData.timeOfDay" class="mt-0"
+                            @change="(payment) => handleChangeSelect(payment, 'timeOfDay')"></Select>
+                    </div>
+                </div>
+                <div v-if="showBleveFields" class="flex space-x-4 mt-2">
+                    <div class="flex flex-col w-1/2">
+                        <span
+                            class="text-sm font-semibold text-ellipsis whitespace-nowrap overflow-hidden ">Mostrar zona de asilamiento de alto riesgo </span>
+                            <ToggleButton class="mt-4" v-model="inputData.fireRisk" />
+                    </div>
+
+                    <div class="flex flex-col w-1/2">
+                        <span class="text-sm font-semibold text-ellipsis whitespace-nowrap overflow-hidden mr-4">Capacidad del contnedor (litros)</span>
+                        <Select :options="['100', '400', '2000', '4000', '8000', '22000', '42000', '82000', '140000']" class="mt-2 mr-4"
+                        
+                            v-model="transportContainer.container"
+                            :inputValue="'100'" ></Select>
+                    </div>
+                </div>
+                <div v-if="showTable32Fields" class="flex space-x-4 mt-4">
+                <div class="flex flex-col w-1/2">
+                    <span class="text-sm font-semibold text-ellipsis whitespace-nowrap overflow-hidden">Mostrar zona de
+                        aislamiento e riesgo</span>
+                    <Select :options="['Bajo', 'Moderado', 'Alto']" v-model="windSpeed.speed" class="mt-0"
+                        :inputValue="windSpeed.speed || 'Bajo'"></Select>
+                </div>
+
+                <div class="flex flex-col w-1/2">
+                    <span class="text-sm font-semibold text-ellipsis whitespace-nowrap overflow-hidden">Contenedor de
+                        transporte</span>
+                    <Select :options="['Vagón cisterna', 'Camión o remolque cisterna']"
+                        v-model="transportContainer.container"
+                        :inputValue="transportContainer.container || 'Vagón cisterna'" class="mt-0"></Select>
+                </div>
+            </div>
+                <div class="col-span-1 w-auto flex justify-center items-center">
+                    <Button class="bg-gray-500 hover:bg-blue-300 h-[50px] w-[50px] shadow-md mr-5"
+                        @click="_CreateERGButtonClicked()" :icon="'icon_buffer'" :title="'Crear zonas'" />
+                    <Button class="bg-gray-500 hover:bg-blue-300 h-[50px] w-[50px] shadow-md" @click="resetTool()"
+                        :icon="'icon_reload'" :title="'Limpiar'" />
+                </div>
+            </div>
+        </section>
     </VueResizable>
-  </template>
+</template>
 
 <!--Vue 3 Composition API -->
 <script setup>
@@ -243,29 +233,44 @@ const onInput = (value) => {
 };
 const refreshKey = ref(0);
 const onSelect = (selected) => {
-  console.log('Material seleccionado:', selected.label);
-  inputData.material = selected.label;
-  // Forzar una actualización
-  refreshKey.value++;
+    console.log('Material seleccionado:', selected.label);
+    inputData.material = selected.label;
+    // Forzar una actualización
+    refreshKey.value++;
 
-  // Verificar si el material tiene BLEVE
-  const material = materialOptions.value.find((m) => m.label.includes(selected.label));
-  const materialCatalog = materials.find((m) => m.IDNum === material.value);
-  if (materialCatalog && materialCatalog.BLEVE === 'Yes') {
-    console.log('El material seleccionado tiene BLEVE');
-    console.log(materialCatalog);
-    showBleveModal.value = true;
-    showBleveFields.value = false; // Ocultar los campos adicionales inicialmente
-  } else {
-    console.log(materialCatalog);
-    showBleveModal.value = false;
-    showBleveFields.value = false;
-  }
+    // Verificar si el material tiene BLEVE
+    const material = materialOptions.value.find((m) => m.label.includes(selected.label));
+    const materialCatalog = materials.find((m) => m.IDNum === material.value);
+    if (materialCatalog && materialCatalog.BLEVE === 'Yes') {
+        console.log('El material seleccionado tiene BLEVE');
+        console.log(materialCatalog);
+        showBleveModal.value = true;
+        showBleveFields.value = false; // Ocultar los campos adicionales inicialmente
+        showTable32Modal.value = false;
+        showTable32Fields.value = false;
+    } else if (materialCatalog && materialCatalog.TABLE3 === 'Yes' || materialCatalog.TABLE2 === 'Yes') {
+        console.log('El material seleccionado tiene tabla 3');
+        console.log(materialCatalog);
+        showTable32Modal.value = true;
+        showTable32Fields.value = false; // Ocultar los campos adicionales inicialmente
+        showBleveModal.value = false;
+        showBleveFields.value = false;
+    } else {
+        console.log(materialCatalog);
+        showBleveModal.value = false;
+        showBleveFields.value = false;
+        showTable32Modal.value = false;
+        showTable32Fields.value = false;
+    }
 };
 
 const closeBleveModal = () => {
-  showBleveModal.value = false;
-  showBleveFields.value = true; // Mostrar los campos adicionales después de cerrar el modal
+    showBleveModal.value = false;
+    showBleveFields.value = true; // Mostrar los campos adicionales después de cerrar el modal
+};
+const closeTable32Modal = () => {
+    showTable32Modal.value = false;
+    showTable32Fields.value = true; // Mostrar los campos adicionales después de cerrar el modal
 };
 
 const loadMaterials = () => {
@@ -457,7 +462,7 @@ const settings = reactive({});
 const initializeDefaultsValues = () => {
 
 
-      // este parametro se debera obtener de la seleccion del material del usuario
+    // este parametro se debera obtener de la seleccion del material del usuario
     // _selectedMaterial.value = {
     //     GuideNum: 153,
     //     IDNum: 2232,
@@ -551,7 +556,7 @@ const initializeDefaultsValues = () => {
     spillTime.value = {
         time: "DY",       // posibles valores: "DY", "NTE" (Durante el día o Noche)
         disabled: false
-    }; 
+    };
 
     // nls parametros constantes no cambian
     nls.bleveSettingsLabel = 'BLEVE';
@@ -565,7 +570,7 @@ const initializeDefaultsValues = () => {
 
     // Establecen la configuración de los símbolos de las zonas de aislamiento, debera existir una interfaz para cambiarlos
     settings.spillLocationOutlineColor = {
-        type: "simple-line", 
+        type: "simple-line",
         color: "#000001",
         style: "solid",
         transparency: 1,
@@ -669,9 +674,11 @@ const initializeDefaultsValues = () => {
 }
 
 const showBleveModal = ref(false);
+const showTable32Modal = ref(false);
+const showTable32Fields = ref(false);
 const showBleveFields = ref(false);
 const windSpeed = reactive({
-  speed: "Bajo"
+    speed: "Bajo"
 });
 
 const autocompleteConfig = () => {
@@ -782,8 +789,7 @@ const _CreateERGButtonClicked = () => {
 }
 
 .resizable-widget {
-  height: 650px !important;
-  min-width: 400px !important;
+    min-width: 400px !important;
 }
 
 .resizable-widget .vue-resizable__handle--top,
@@ -794,79 +800,89 @@ const _CreateERGButtonClicked = () => {
 .resizable-widget .vue-resizable__handle--bottom-right {
     display: none;
 }
+
 .custom-multiselect::v-deep .multiselect__content-wrapper {
     padding-left: 10px;
     padding-right: 10px;
-  background-color: white;
-  position: absolute;
-  z-index: 50;
-  width: 100%;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-  max-height: 200px; /* Ajusta este valor según tus necesidades */
-  max-width: 350px;
-  overflow-y: auto; /* Agrega scroll vertical cuando sea necesario */
+    background-color: white;
+    position: absolute;
+    z-index: 50;
+    width: 100%;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    max-height: 200px;
+    /* Ajusta este valor según tus necesidades */
+    max-width: 350px;
+    overflow-y: auto;
+    /* Agrega scroll vertical cuando sea necesario */
 }
 
 .modal {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background-color: rgba(0, 0, 0, 0.5);
-  z-index: 100;
-  width: auto;
-  max-width: 400px;
-  height: auto;
-  max-height: 80vh;
-  border-radius: 5px;
-  overflow: auto;
-  display: flex;
-  flex-direction: column;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 100;
+    width: auto;
+    max-width: 400px;
+    height: auto;
+    max-height: 80vh;
+    border-radius: 5px;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
 }
 
 .modal-content {
-  background-color: #f5f5f5; /* Fondo gris claro */
-  padding: 25px 25px 15px 25px;
-  border-radius: 5px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
-  color: #333; /* Texto más oscuro */
-  font-family: Arial, sans-serif;
+    background-color: #f5f5f5;
+    /* Fondo gris claro */
+    padding: 25px 25px 15px 25px;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    color: #333;
+    /* Texto más oscuro */
+    font-family: Arial, sans-serif;
 }
 
 .modal-title {
-  margin-bottom: 15px;
-  font-size: 16px;
-  color: #333; /* Texto más oscuro */
-  line-height: 1.4;
+    margin-bottom: 15px;
+    font-size: 16px;
+    color: #333;
+    /* Texto más oscuro */
+    line-height: 1.4;
 }
 
 .modal-subtitle {
-  margin-bottom: 20px;
-  font-size: 14px;
-  color: #333; /* Texto más oscuro */
-  line-height: 1.4;
+    margin-bottom: 20px;
+    font-size: 14px;
+    color: #333;
+    /* Texto más oscuro */
+    line-height: 1.4;
 }
 
 .modal-button {
-  background-color: #e0e0e0; /* Gris claro */
-  border: none;
-  padding: 8px 16px;
-  border-radius: 5px;
-  font-size: 14px;
-  cursor: pointer;
-  align-self: flex-end; /* Alinea el botón a la derecha */
-  margin-bottom: 10px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2); /* Sombra sutil */
+    background-color: #e0e0e0;
+    /* Gris claro */
+    border: none;
+    padding: 8px 16px;
+    border-radius: 5px;
+    font-size: 14px;
+    cursor: pointer;
+    align-self: flex-end;
+    /* Alinea el botón a la derecha */
+    margin-bottom: 10px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    /* Sombra sutil */
 }
 
 .modal-button:hover {
-  background-color: #d0d0d0; /* Gris un poco más oscuro al hacer hover */
+    background-color: #d0d0d0;
+    /* Gris un poco más oscuro al hacer hover */
 }
 
 
 .resizable-widget {
-  /* height: 650px !important;  <-  elimina esta linea */
-  min-width: 400px !important;
+    /* height: 650px !important;  <-  elimina esta linea */
+    min-width: 400px !important;
 }
-
 </style>
