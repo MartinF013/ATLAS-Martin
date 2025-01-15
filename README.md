@@ -1,3 +1,10 @@
+#versiones 
+ npm --version
+10.7.0
+P> vue cli --version
+@vue/cli 5.0.8
+
+
 # atlas_queretaro
 
 ## Getting started
