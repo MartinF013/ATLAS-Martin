@@ -1,0 +1,13 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: "HelveticaNeueLight";
+  src: font-url("@/assets/fonts/HelveticaNeue-Light.otf") format("opentype");
+}
+
+@font-face {
+  font-family: "HelveticaNeueRegular";
+  src: font-url("./assets/font/helveticaneue.ttf") format("truetype");
+}
