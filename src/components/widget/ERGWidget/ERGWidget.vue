@@ -26,12 +26,13 @@
                 class="custom-multiselect  h-15 border rounded-md px-2 py-1" ref="multiselect" :key="refreshKey" />
 
             <!-- <div v-if="showBleveModal" class="modal"> -->
-            <div v-if="showTable32Modal" class="modal">
+            <!-- TODO Cambiar texto por el qu se necesite TABL2 o TABL3 -->
+            <div v-if="showTable32Modal" class="modal">  
                 <div class="modal-content">
                     <p class="modal-title">
                         Para el material que ha seleccionado, es posible mostrar una distancia de evacuación adicional
                         en caso de alto riesgo.
-                    </p>
+                    </p>  
                     <p class="modal-subtitle">
                         Para permitirlo, active el selector <b>Mostrar zona de aislamiento de alto riesgo</b> y
                         seleccione la capacidad correcta del contenedor.
@@ -90,6 +91,8 @@
                             @change="(payment) => handleChangeSelect(payment, 'timeOfDay')"></Select>
                     </div>
                 </div>
+                <!-- TODO Cambiar campos por los que necesite TABLE2 o TABLE3-->
+                 <!-- TODO Ageregar @change="(payment) => handleChangeSelect(payment, 'timeOfDay')" con ss propios paramtros-->
                 <div v-if="showBleveFields" class="flex space-x-4 mt-2">
                     <div class="flex flex-col w-1/2">
                         <span
@@ -195,6 +198,7 @@ onMounted(() => {
 //____________________________________________________________________________________________________________________________
 
 /// Seccion de propiedades y funciones  para los campos de entrada_____________________________________________________________
+//TODO meter nuevos campos para TABLE2 y TABLE3 e inicialirlos 
 const inputData = reactive({
     latitude: '',
     longitude: '',
@@ -217,10 +221,12 @@ const handleChange = (payment, input) => {
     if (input === "latitude") inputData.latitude = payment;
     if (input === "longitude") inputData.longitude = payment;
     if (input === "windDirection") inputData.windDirection = payment;
+    //TODO meter nuevos campos
 };
 
 const handleChangeSelect = (payment, input) => {
     if (input === "spillSize") inputData.spillSize = payment;
+    //TODO meter nuevos campos
 };
 
 const filteredMaterials = ref([]); // Inicializa como una lista vacía
@@ -760,6 +766,7 @@ const _CreateERGButtonClicked = () => {
     autocompleteConfig();
 
     console.log('Crear zonas de aislamiento');
+    //TODO Verificar aqi que los datos que se mandan de cada campo sean los correctos
     createERGBZones(
         _selectedMaterial,      // Material seleccionado 
         _pointToIncident,       // Punto del incidente
